@@ -18,7 +18,7 @@ EMAIL_DESTINATARIO = os.environ.get("EMAIL_DESTINATARIO")
 async def buscar_noticias():
     """
     Busca as 5 principais notícias sobre construção civil usando Playwright.
-    Versão final e robusta.
+    Versão definitiva com espera inteligente.
     """
     print("Buscando notícias com Playwright...")
     async with async_playwright() as p:
@@ -35,32 +35,30 @@ async def buscar_noticias():
             except Exception:
                 print("Banner de consentimento não encontrado ou já aceite, a continuar...")
 
-            await page.wait_for_selector("article a", timeout=20000)
+            # --- LÓGICA DE ESPERA E SELEÇÃO CORRIGIDA ---
+            # 1. Espera pelo seletor do TÍTULO para garantir que todo o conteúdo carregou
+            print("Aguardando os títulos das notícias aparecerem na página...")
+            await page.wait_for_selector("div.ipQwMb", timeout=20000)
+            print("Títulos visíveis. A extrair notícias...")
 
+            # 2. Agora que temos a certeza que tudo carregou, pega os artigos
             artigos = await page.query_selector_all("article")
             noticias = []
 
+            # 3. Itera e extrai os dados
             for item in artigos[:5]:
                 link_element = await item.query_selector("a")
-                if not link_element:
-                    continue
+                titulo_element = await item.query_selector("div.ipQwMb")
 
-                link = await link_element.get_attribute("href")
-                
-                # --- LÓGICA SIMPLIFICADA E MAIS ROBUSTA ---
-                # Pega todo o texto visível dentro do link, que é o título.
-                titulo_bruto = await link_element.inner_text()
-                # Limpa o texto, removendo linhas em branco que possam aparecer.
-                titulo = "\n".join([line.strip() for line in titulo_bruto.split('\n') if line.strip()])
-                
-                if not link or not titulo:
-                    continue
-                # -------------------------------------------
-                
-                link_absoluto = f"https://news.google.com{link[1:]}" if link.startswith('.') else link
-                
-                noticias.append({"titulo": titulo, "link": link_absoluto})
-            
+                # Garante que ambos os elementos existem antes de prosseguir
+                if link_element and titulo_element:
+                    link = await link_element.get_attribute("href")
+                    titulo = await titulo_element.inner_text()
+
+                    if link and titulo:
+                        link_absoluto = f"https://news.google.com{link[1:]}" if link.startswith('.') else link
+                        noticias.append({"titulo": titulo.strip(), "link": link_absoluto})
+
             print(f"{len(noticias)} notícias encontradas.")
             return noticias
         except Exception as e:
@@ -129,6 +127,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
