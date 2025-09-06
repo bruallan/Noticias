@@ -15,9 +15,11 @@ SENHA_REMETENTE = os.environ.get("SENHA_REMETENTE")
 EMAIL_DESTINATARIO = os.environ.get("EMAIL_DESTINATARIO")
 
 # --- FUNÇÃO ATUALIZADA USANDO PLAYWRIGHT ---
+# --- FUNÇÃO ATUALIZADA E CORRIGIDA ---
 async def buscar_noticias():
     """
-    Busca as 5 principais notícias sobre construção civil usando Playwright.
+    Busca as 5 principais notícias sobre construção civil usando Playwright,
+    com os seletores corretos baseados na estrutura atual da página.
     """
     print("Buscando notícias com Playwright...")
     async with async_playwright() as p:
@@ -34,18 +36,29 @@ async def buscar_noticias():
             except Exception:
                 print("Banner de consentimento não encontrado ou já aceite, a continuar...")
 
-            await page.wait_for_selector("article h3", timeout=20000)
+            # NOVO SELETOR: Espera por um 'article' que contenha um link 'a'
+            # Esta é a forma correta de garantir que os artigos carregaram.
+            await page.wait_for_selector("article a", timeout=20000)
 
-            artigos = await page.query_selector_all("article:has(h3)")
+            artigos = await page.query_selector_all("article")
             noticias = []
 
             for item in artigos[:5]:
-                titulo_element = await item.query_selector("h3")
-                titulo = await titulo_element.inner_text()
-                
-                link_element = await titulo_element.query_selector("xpath=..")
+                # O link e o título estão no mesmo elemento <a>
+                link_element = await item.query_selector("a")
+                if not link_element:
+                    continue
+
                 link = await link_element.get_attribute("href")
                 
+                # O título está dentro de um <div> com a classe "ipQwMb"
+                titulo_element = await link_element.query_selector("div.ipQwMb")
+                if not titulo_element:
+                    continue
+                
+                titulo = await titulo_element.inner_text()
+                
+                # Constrói o URL absoluto
                 link_absoluto = f"https://news.google.com{link[1:]}" if link.startswith('.') else link
                 
                 noticias.append({"titulo": titulo, "link": link_absoluto})
@@ -54,14 +67,6 @@ async def buscar_noticias():
             return noticias
         except Exception as e:
             print(f"Ocorreu um erro ao buscar as notícias: {e}")
-            
-            # --- NOVO CÓDIGO DE DEPURAÇÃO ---
-            print("\n--- INÍCIO DO HTML DA PÁGINA ---")
-            page_content = await page.content()
-            print(page_content)
-            print("--- FIM DO HTML DA PÁGINA ---\n")
-            # ------------------------------------
-
             await page.screenshot(path="screenshot_erro.png")
             return []
         finally:
@@ -126,5 +131,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
