@@ -1,4 +1,3 @@
 requests-html
-playwright
 lxml_html_clean
 websockets==10.4
