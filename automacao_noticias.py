@@ -15,11 +15,10 @@ SENHA_REMETENTE = os.environ.get("SENHA_REMETENTE")
 EMAIL_DESTINATARIO = os.environ.get("EMAIL_DESTINATARIO")
 
 # --- FUNÇÃO ATUALIZADA USANDO PLAYWRIGHT ---
-# --- FUNÇÃO ATUALIZADA E CORRIGIDA ---
 async def buscar_noticias():
     """
-    Busca as 5 principais notícias sobre construção civil usando Playwright,
-    com os seletores corretos baseados na estrutura atual da página.
+    Busca as 5 principais notícias sobre construção civil usando Playwright.
+    Versão final e robusta.
     """
     print("Buscando notícias com Playwright...")
     async with async_playwright() as p:
@@ -36,29 +35,28 @@ async def buscar_noticias():
             except Exception:
                 print("Banner de consentimento não encontrado ou já aceite, a continuar...")
 
-            # NOVO SELETOR: Espera por um 'article' que contenha um link 'a'
-            # Esta é a forma correta de garantir que os artigos carregaram.
             await page.wait_for_selector("article a", timeout=20000)
 
             artigos = await page.query_selector_all("article")
             noticias = []
 
             for item in artigos[:5]:
-                # O link e o título estão no mesmo elemento <a>
                 link_element = await item.query_selector("a")
                 if not link_element:
                     continue
 
                 link = await link_element.get_attribute("href")
                 
-                # O título está dentro de um <div> com a classe "ipQwMb"
-                titulo_element = await link_element.query_selector("div.ipQwMb")
-                if not titulo_element:
+                # --- LÓGICA SIMPLIFICADA E MAIS ROBUSTA ---
+                # Pega todo o texto visível dentro do link, que é o título.
+                titulo_bruto = await link_element.inner_text()
+                # Limpa o texto, removendo linhas em branco que possam aparecer.
+                titulo = "\n".join([line.strip() for line in titulo_bruto.split('\n') if line.strip()])
+                
+                if not link or not titulo:
                     continue
+                # -------------------------------------------
                 
-                titulo = await titulo_element.inner_text()
-                
-                # Constrói o URL absoluto
                 link_absoluto = f"https://news.google.com{link[1:]}" if link.startswith('.') else link
                 
                 noticias.append({"titulo": titulo, "link": link_absoluto})
@@ -131,6 +129,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
