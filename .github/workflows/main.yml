@@ -45,3 +45,11 @@ jobs:
           SENHA_REMETENTE: ${{ secrets.SENHA_REMETENTE }}
           EMAIL_DESTINATARIO: ${{ secrets.EMAIL_DESTINATARIO }}
         run: python automacao_noticias.py
+
+      # --- NOVO PASSO PARA PUBLICAR O ARTEFACTO ---
+      - name: Upload screenshot on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-em-caso-de-erro
+          path: screenshot_erro.png
