@@ -1,56 +1,61 @@
 # -*- coding: utf-8 -*-
 
-# --------------------------------------------------------------------------
-# Documentação
-# --------------------------------------------------------------------------
-#
-# Versão adaptada para rodar com GitHub Actions.
-# As credenciais são lidas de forma segura a partir de variáveis de ambiente,
-# que devem ser configuradas como "Secrets" no repositório do GitHub.
-#
-# --------------------------------------------------------------------------
-
 import smtplib
-import os # Importamos a biblioteca 'os' para acessar as variáveis de ambiente
+import os
+import asyncio # Necessário para o Playwright
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from requests_html import HTMLSession
+from playwright.async_api import async_playwright
 from datetime import datetime
 
 # --- Configurações do Email (lidas dos GitHub Secrets) ---
-# Agora, em vez de colocar as credenciais aqui, pegamos das variáveis de ambiente
 EMAIL_REMETENTE = os.environ.get("EMAIL_REMETENTE")
 SENHA_REMETENTE = os.environ.get("SENHA_REMETENTE")
 EMAIL_DESTINATARIO = os.environ.get("EMAIL_DESTINATARIO")
 
-def buscar_noticias():
+# --- FUNÇÃO ATUALIZADA USANDO PLAYWRIGHT ---
+async def buscar_noticias():
     """
-    Busca as 5 principais notícias sobre construção civil no Google Notícias.
+    Busca as 5 principais notícias sobre construção civil usando Playwright.
     """
-    print("Buscando notícias...")
-    session = HTMLSession()
-    url = "https://news.google.com/search?q=constru%C3%A7%C3%A3o%20civil&hl=pt-BR&gl=BR&ceid=BR%3Apt-419"
-
+    print("Buscando notícias com Playwright...")
     try:
-        response = session.get(url)
-        response.raise_for_status()
-        response.html.render(sleep=1, timeout=20)
-        artigos = response.html.find('article')
-        noticias = []
+        async with async_playwright() as p:
+            # Inicia o navegador Chromium. O Playwright lida com os argumentos para nós.
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            
+            url = "https://news.google.com/search?q=constru%C3%A7%C3%A3o%20civil&hl=pt-BR&gl=BR&ceid=BR%3Apt-419"
+            await page.goto(url, wait_until="domcontentloaded")
 
-        for item in artigos[:5]:
-            try:
-                titulo = item.find('h3', first=True).text
-                link = list(item.absolute_links)[0]
-                noticias.append({"titulo": titulo, "link": link})
-            except (AttributeError, IndexError):
-                continue
+            # Espera pelos artigos aparecerem na página
+            await page.wait_for_selector("article h3", timeout=20000)
 
-        print(f"{len(noticias)} notícias encontradas.")
-        return noticias
+            # Pega os 5 primeiros artigos
+            artigos = await page.query_selector_all("article:has(h3)")
+            noticias = []
+
+            for item in artigos[:5]:
+                titulo_element = await item.query_selector("h3")
+                titulo = await titulo_element.inner_text()
+                
+                # O link está no elemento 'a' pai do 'h3'
+                link_element = await titulo_element.query_selector("xpath=..")
+                link = await link_element.get_attribute("href")
+                
+                # Constrói o URL absoluto
+                link_absoluto = f"https://news.google.com{link[1:]}" if link.startswith('.') else link
+                
+                noticias.append({"titulo": titulo, "link": link_absoluto})
+            
+            await browser.close()
+            print(f"{len(noticias)} notícias encontradas.")
+            return noticias
     except Exception as e:
         print(f"Ocorreu um erro ao buscar as notícias: {e}")
         return []
+
+# --- O RESTO DO SCRIPT PERMANECE IGUAL ---
 
 def criar_corpo_email(noticias):
     """
@@ -75,7 +80,6 @@ def enviar_email(corpo_html):
     """
     Envia o email com as notícias.
     """
-    # Validação para garantir que os secrets foram carregados
     if not all([EMAIL_REMETENTE, SENHA_REMETENTE, EMAIL_DESTINATARIO]):
         print("Erro: As credenciais de email (secrets) não foram configuradas corretamente.")
         return
@@ -97,11 +101,12 @@ def enviar_email(corpo_html):
     except Exception as e:
         print(f"Ocorreu um erro ao enviar o email: {e}")
 
+# --- Função Principal Modificada para rodar o asyncio ---
 def main():
     """
     Função principal que orquestra a execução do script.
     """
-    noticias = buscar_noticias()
+    noticias = asyncio.run(buscar_noticias())
     if noticias:
         corpo_email = criar_corpo_email(noticias)
         enviar_email(corpo_email)
