@@ -35,8 +35,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # O requests-html precisa que o navegador Chromium seja baixado
-          python -m playwright install chromium
 
       # 4. Roda o script Python.
       - name: Run Python script
