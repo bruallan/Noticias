@@ -27,19 +27,13 @@ async def buscar_noticias():
             url = "https://news.google.com/search?q=constru%C3%A7%C3%A3o%20civil&hl=pt-BR&gl=BR&ceid=BR%3Apt-419"
             await page.goto(url, wait_until="domcontentloaded")
 
-            # --- LÓGICA ATUALIZADA PARA ACEITAR COOKIES ---
-            # Procura por um botão de consentimento e clica nele se existir.
-            # Usamos uma expressão regular para encontrar "Accept all" ou "Aceitar tudo", etc.
-            # Damos-lhe 5 segundos para aparecer. Se não aparecer, o script continua.
             try:
                 banner_button = page.get_by_role("button").filter(has_text=re.compile("Accept all|Aceitar tudo", re.IGNORECASE))
                 await banner_button.click(timeout=5000)
                 print("Banner de consentimento aceite.")
             except Exception:
                 print("Banner de consentimento não encontrado ou já aceite, a continuar...")
-            # --------------------------------------------------
 
-            # Agora que o banner foi tratado, procuramos pelas notícias
             await page.wait_for_selector("article h3", timeout=20000)
 
             artigos = await page.query_selector_all("article:has(h3)")
@@ -60,12 +54,18 @@ async def buscar_noticias():
             return noticias
         except Exception as e:
             print(f"Ocorreu um erro ao buscar as notícias: {e}")
-            # Tira um screenshot para nos ajudar a depurar o que a página está a mostrar
+            
+            # --- NOVO CÓDIGO DE DEPURAÇÃO ---
+            print("\n--- INÍCIO DO HTML DA PÁGINA ---")
+            page_content = await page.content()
+            print(page_content)
+            print("--- FIM DO HTML DA PÁGINA ---\n")
+            # ------------------------------------
+
             await page.screenshot(path="screenshot_erro.png")
             return []
         finally:
             await browser.close()
-
 # --- O RESTO DO SCRIPT PERMANECE IGUAL ---
 
 def criar_corpo_email(noticias):
@@ -126,4 +126,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
