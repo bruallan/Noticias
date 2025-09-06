@@ -3,6 +3,7 @@
 import smtplib
 import os
 import asyncio # Necessário para o Playwright
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from playwright.async_api import async_playwright
@@ -19,19 +20,28 @@ async def buscar_noticias():
     Busca as 5 principais notícias sobre construção civil usando Playwright.
     """
     print("Buscando notícias com Playwright...")
-    try:
-        async with async_playwright() as p:
-            # Inicia o navegador Chromium. O Playwright lida com os argumentos para nós.
-            browser = await p.chromium.launch()
-            page = await browser.new_page()
-            
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+        try:
             url = "https://news.google.com/search?q=constru%C3%A7%C3%A3o%20civil&hl=pt-BR&gl=BR&ceid=BR%3Apt-419"
             await page.goto(url, wait_until="domcontentloaded")
 
-            # Espera pelos artigos aparecerem na página
+            # --- LÓGICA ATUALIZADA PARA ACEITAR COOKIES ---
+            # Procura por um botão de consentimento e clica nele se existir.
+            # Usamos uma expressão regular para encontrar "Accept all" ou "Aceitar tudo", etc.
+            # Damos-lhe 5 segundos para aparecer. Se não aparecer, o script continua.
+            try:
+                banner_button = page.get_by_role("button").filter(has_text=re.compile("Accept all|Aceitar tudo", re.IGNORECASE))
+                await banner_button.click(timeout=5000)
+                print("Banner de consentimento aceite.")
+            except Exception:
+                print("Banner de consentimento não encontrado ou já aceite, a continuar...")
+            # --------------------------------------------------
+
+            # Agora que o banner foi tratado, procuramos pelas notícias
             await page.wait_for_selector("article h3", timeout=20000)
 
-            # Pega os 5 primeiros artigos
             artigos = await page.query_selector_all("article:has(h3)")
             noticias = []
 
@@ -39,21 +49,22 @@ async def buscar_noticias():
                 titulo_element = await item.query_selector("h3")
                 titulo = await titulo_element.inner_text()
                 
-                # O link está no elemento 'a' pai do 'h3'
                 link_element = await titulo_element.query_selector("xpath=..")
                 link = await link_element.get_attribute("href")
                 
-                # Constrói o URL absoluto
                 link_absoluto = f"https://news.google.com{link[1:]}" if link.startswith('.') else link
                 
                 noticias.append({"titulo": titulo, "link": link_absoluto})
             
-            await browser.close()
             print(f"{len(noticias)} notícias encontradas.")
             return noticias
-    except Exception as e:
-        print(f"Ocorreu um erro ao buscar as notícias: {e}")
-        return []
+        except Exception as e:
+            print(f"Ocorreu um erro ao buscar as notícias: {e}")
+            # Tira um screenshot para nos ajudar a depurar o que a página está a mostrar
+            await page.screenshot(path="screenshot_erro.png")
+            return []
+        finally:
+            await browser.close()
 
 # --- O RESTO DO SCRIPT PERMANECE IGUAL ---
 
@@ -115,3 +126,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
