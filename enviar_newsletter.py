@@ -15,7 +15,7 @@ SENDER_PASSWORD = os.getenv('SENDER_PASSWORD')
 RECEIVER_EMAIL = os.getenv('RECEIVER_EMAIL')
 
 # Parâmetros da busca de notícias
-TEMA_PESQUISA = 'integração de sistemas'
+TEMA_PESQUISA = 'mercado imobiliario'
 QUANTIDADE_NOTICIAS = 10
 IDIOMA = 'pt'
 PAIS = 'br'
@@ -85,4 +85,5 @@ except Exception as e:
     
 finally:
     # Fecha a conexão
+
     server.quit()
