@@ -1,0 +1,46 @@
+# Nome da sua automação, aparecerá na aba "Actions" do GitHub
+name: Enviar Newsletter Diaria
+
+# Gatilho (trigger) da automação
+on:
+  schedule:
+    # A sintaxe 'cron' define o agendamento.
+    # '0 8 * * *' significa: às 8:00 UTC todos os dias.
+    # 8h UTC corresponde a 5h da manhã no horário de Brasília (UTC-3).
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    # Isso permite que você acione a automação manualmente pela aba Actions, ótimo para testes.
+
+# Tarefas que a automação vai executar
+jobs:
+  build:
+    # O tipo de máquina virtual que vai rodar o código. 'ubuntu-latest' é uma boa escolha.
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Clona o seu repositório para dentro da máquina virtual
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      # 2. Configura o ambiente Python
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' # Você pode usar a versão do Python que preferir
+
+      # 3. Instala as dependências necessárias (no nosso caso, a biblioteca 'requests')
+      - name: Instalar Dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      # 4. Executa o seu script Python
+      - name: Rodar script de envio da newsletter
+        env:
+          # Mapeia as Secrets que criamos para variáveis de ambiente
+          # O script Python vai ler essas variáveis com os.getenv()
+          GNEWS_API_KEY: ${{ secrets.GNEWS_API_KEY }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+        run: python enviar_newsletter.py
