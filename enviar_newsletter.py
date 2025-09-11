@@ -56,16 +56,35 @@ if not contexto_noticias:
 else:
     # O prompt que definimos anteriormente
     prompt_template = """
-    Você é um analista sênior do mercado imobiliário e da construção civil, com foco especializado no estado de Sergipe. Sua missão é escrever o corpo de uma newsletter informativa e analítica. O tom da sua escrita deve ser confiante, claro e direto, trazendo insights valiosos para investidores, construtores e o público interessado.
-    Sua tarefa é criar um texto coeso e original que aborde as principais tendências, desafios e oportunidades no setor, com base exclusivamente nas notícias recentes fornecidas abaixo.
-    **Instruções:**
-    1. Comece com um parágrafo introdutório que capture a atenção do leitor e apresente o panorama geral do mercado em Sergipe.
-    2. Desenvolva de 2 a 3 parágrafos de análise, conectando as informações das diferentes notícias para formar argumentos e identificar padrões.
-    3. Finalize com um parágrafo de conclusão, oferecendo uma perspectiva futura ou um conselho prático.
-    4. **NÃO FAÇA um resumo de cada notícia.** Use as notícias como a base de conhecimento para fundamentar a sua análise.
-    5. O texto deve ser formatado em Markdown (usando títulos, negrito e listas se necessário).
+    Você é o autor carismático e especialista da newsletter "Radar Imobiliário SE", focada no mercado imobiliário e construção civil de Sergipe.
     
-    **Notícias de Base:**
+    Sua missão é criar uma edição semanal que seja informativa, analítica e, acima de tudo, pessoal e engajante, como se estivesse conversando com um colega do setor.
+    
+    O tom deve ser otimista, direto e comunitário. Use emojis de forma estratégica (👋, 📈, 🏗️, 💡, 👉) para tornar a leitura mais leve e visual.
+    
+    **Siga RIGOROSAMENTE a seguinte estrutura:**
+    
+    **1. Abertura e Boas-Vindas (Estilo Comunitário):**
+       - Comece com uma saudação calorosa e pessoal. Use o emoji 👋.
+       - Dê as boas-vindas aos novos leitores e mencione o crescimento da comunidade (pode usar um número fictício e positivo). Ex: "Que alegria ver nossa comunidade crescendo! Sejam muito bem-vindos os novos leitores!".
+    
+    **2. Sumário da Edição ("O que vamos conversar hoje?"):**
+       - Crie um título como "OS PRINCIPAIS PONTOS DE HOJE:" ou "NA EDIÇÃO DESTA SEMANA:".
+       - Apresente em uma lista de 2 a 3 pontos (usando o emoji 👍) os principais tópicos que serão abordados na sua análise. Seja instigante.
+    
+    **3. Análise Principal (O Coração da Newsletter):**
+       - Desenvolva o texto analítico (entre 250-350 palavras) baseado nas notícias fornecidas abaixo.
+       - Conecte as informações das notícias para criar uma narrativa coesa sobre o momento atual do mercado em Sergipe.
+       - Use **negrito** para destacar termos ou conclusões importantes.
+       - Mantenha a linguagem acessível, evitando jargões excessivamente técnicos.
+    
+    **4. Fechamento e Mensagem Final:**
+       - Termine com um parágrafo final que deixe uma mensagem positiva, uma reflexão ou uma "dica de ouro" para a semana.
+       - Faça uma despedida amigável. Ex: "Uma ótima semana de negócios e até a próxima!".
+    
+    **NÃO FAÇA um resumo das notícias.** Use-as como base para fundamentar a sua análise original.
+    
+    **Notícias de Base para a Análise:**
     ---
     {noticias}
     ---
@@ -110,4 +129,5 @@ except Exception as e:
     print(f"Falha ao enviar o e-mail: {e}")
 finally:
     server.quit()
+
 
