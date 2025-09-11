@@ -23,9 +23,11 @@ RECEIVER_EMAILS_LIST = [email.strip() for email in RECEIVER_EMAILS_STR.split(','
 
 # TEMAS DE PESQUISA (ajustados para o novo objetivo)
 TEMAS_LIST = [
-    "mercado imobiliário Sergipe", 
-    "construção civil Sergipe",
-    "lançamentos imobiliários Aracaju"
+    "mercado imobiliário", 
+    "construção civil",
+    "imovéis aracaju",
+    "mercado aracaju",
+    "lançamentos imobiliários"
 ]
 
 contexto_noticias = ""
@@ -108,3 +110,4 @@ except Exception as e:
     print(f"Falha ao enviar o e-mail: {e}")
 finally:
     server.quit()
+
